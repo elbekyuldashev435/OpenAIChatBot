@@ -50,9 +50,3 @@ pip install -r requirements.txt
 
 # botni ishga tushirish
 python main.py
-
-
-👨‍💻 Muallif
-Ismi: Elbek Yuldashev
-
-Telegram: elbek_prgm
