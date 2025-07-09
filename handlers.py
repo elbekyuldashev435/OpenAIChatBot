@@ -7,6 +7,7 @@ from utils import language_keyboard, get_text
 import os
 from dotenv import load_dotenv
 from database import get_users_with_query_stats
+from datetime import datetime
 
 router = Router()
 
@@ -40,9 +41,18 @@ async def handle_question(msg: Message):
 
             for uid, username, count, last_query in users_data:
                 display_name = username or str(uid)
+                if last_query:
+                    try:
+                        dt = datetime.fromisoformat(last_query)
+                        formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+                    except:
+                        formatted_time = last_query
+                else:
+                    formatted_time = "Yo‘q"
+
                 text += f"👤 {display_name}:\n"
                 text += f"  — So‘rovlar soni: {count}\n"
-                text += f"  — Oxirgi so‘rov: {last_query or 'Yo‘q'}\n\n"
+                text += f"  — Oxirgi so‘rov: {formatted_time}\n\n"
 
             await msg.answer(text[:4096])
         else:
