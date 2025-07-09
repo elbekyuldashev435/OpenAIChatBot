@@ -49,4 +49,4 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 
 # botni ishga tushirish
-python main.py
+python bot.py
