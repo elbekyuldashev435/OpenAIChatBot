@@ -1,5 +1,6 @@
 import aiosqlite
 from datetime import datetime, timedelta
+import sqlite3
 
 
 DB_NAME = 'bot_db.sqlite'
@@ -97,3 +98,19 @@ async def count_last_minute_queries(user_id):
         """, (user_id, one_minute_ago.isoformat())) as cursor:
             row = await cursor.fetchone()
             return row[0]
+
+
+async def get_users_with_query_stats():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT u.id, u.username, COUNT(q.id), MAX(q.created_at)
+        FROM users u
+        LEFT JOIN queries q ON u.id = q.user_id
+        GROUP BY u.id
+        ORDER BY MAX(q.created_at) DESC
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
