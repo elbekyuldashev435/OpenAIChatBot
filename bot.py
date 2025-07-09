@@ -5,6 +5,9 @@ from database import init_db
 from handlers import router
 
 
+print(f"BOT TOKEN: {BOT_TOKEN}")
+
+
 async def main():
     await init_db()
     bot = Bot(token=BOT_TOKEN)

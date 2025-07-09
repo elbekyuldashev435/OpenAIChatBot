@@ -1,18 +1,24 @@
 import openai
 from conf import OPENAI_API_KEY
 
-
 openai.api_key = OPENAI_API_KEY
+openai.api_base = "https://openrouter.ai/api/v1"
+
+
+MODEL_NAME = "openai/gpt-4o"
 
 
 async def get_openai_response(prompt: str) -> str:
     try:
-        response = openai.Completion.create(
-            model="gpt-3.5-turbo-instruct",
-            prompt=prompt,
+        response = openai.ChatCompletion.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
             max_tokens=150,
             temperature=0.7
         )
-        return response.choices[0].text.strip()
+        return response.choices[0].message["content"].strip()
     except Exception as e:
-        return f"❌ OpenAI xatolik berdi: {e}"
+        return f"❌ Xatolik yuz berdi: {e}"
