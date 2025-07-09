@@ -100,16 +100,16 @@ async def count_last_minute_queries(user_id):
             return row[0]
 
 
-async def get_users_with_query_stats():
+def get_users_with_query_stats():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT u.id, u.username, COUNT(q.id), MAX(q.created_at)
+        SELECT u.user_id, u.username, COUNT(q.id), MAX(q.asked_at)
         FROM users u
-        LEFT JOIN queries q ON u.id = q.user_id
-        GROUP BY u.id
-        ORDER BY MAX(q.created_at) DESC
+        LEFT JOIN queries q ON u.user_id = q.user_id
+        GROUP BY u.user_id
+        ORDER BY MAX(q.asked_at) DESC
     """)
     rows = cursor.fetchall()
     conn.close()
