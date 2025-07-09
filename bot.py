@@ -3,6 +3,8 @@ from aiogram import Bot, Dispatcher
 from conf import BOT_TOKEN
 from database import init_db
 from handlers import router
+from conf import OPENAI_API_KEY
+print("OPENAI_API_KEY:", OPENAI_API_KEY)
 
 
 async def main():

@@ -17,6 +17,19 @@ load_dotenv('.env.txt')
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 
+@router.message(CommandStart())
+async def start_cmd(msg: Message):
+    await add_user(msg.from_user.id, msg.from_user.username)
+    await msg.answer(get_text("welcome", "uz"), reply_markup=language_keyboard())
+
+
+@router.callback_query(F.data.startswith("lang_"))
+async def lang_selected(callback: CallbackQuery):
+    lang = callback.data.split("_")[1]
+    await set_language(callback.from_user.id, lang)
+    await callback.message.edit_text(get_text("enter_question", lang))
+
+
 @router.message()
 async def handle_question(msg: Message):
     lang = await get_language(msg.from_user.id)
@@ -48,16 +61,3 @@ async def handle_question(msg: Message):
     reply = await get_openai_response(msg.text)
     await save_query(msg.from_user.id, msg.text, reply)
     await msg.answer(reply)
-
-
-@router.message(CommandStart())
-async def start_cmd(msg: Message):
-    await add_user(msg.from_user.id, msg.from_user.username)
-    await msg.answer(get_text("welcome", "uz"), reply_markup=language_keyboard())
-
-
-@router.callback_query(F.data.startswith("lang_"))
-async def lang_selected(callback: CallbackQuery):
-    lang = callback.data.split("_")[1]
-    await set_language(callback.from_user.id, lang)
-    await callback.message.edit_text(get_text("enter_question", lang))
