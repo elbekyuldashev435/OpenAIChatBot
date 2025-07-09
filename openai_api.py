@@ -1,10 +1,11 @@
 import openai
 from conf import OPENAI_API_KEY
 
+if not OPENAI_API_KEY:
+    raise ValueError("❌ OPENAI_API_KEY topilmadi. Iltimos .env.txt faylni tekshiring.")
+
 openai.api_key = OPENAI_API_KEY
 openai.api_base = "https://openrouter.ai/api/v1"
-
-
 MODEL_NAME = "openai/gpt-4o"
 
 
