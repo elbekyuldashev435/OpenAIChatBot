@@ -20,32 +20,20 @@ ADMIN_ID = int(os.getenv("ADMIN_ID"))
 @router.message()
 async def handle_question(msg: Message):
     lang = await get_language(msg.from_user.id)
-
     text_lower = msg.text.lower()
 
     if text_lower in ["/users", "/foydalanuvchilar", "/пользователи"]:
         if msg.from_user.id == ADMIN_ID:
             users_data = await get_users_with_query_stats()
             text = "📋 Foydalanuvchilar ro'yxati:\n\n"
-            csv_rows = [("ID", "Username", "So‘rovlar soni", "So‘nggi so‘rov")]
 
             for uid, username, count, last_query in users_data:
                 display_name = username or str(uid)
                 text += f"👤 {display_name}:\n"
                 text += f"  — So‘rovlar soni: {count}\n"
                 text += f"  — Oxirgi so‘rov: {last_query or 'Yo‘q'}\n\n"
-                csv_rows.append((uid, username or "", count, last_query or "Yo‘q"))
 
             await msg.answer(text[:4096])
-
-            with open("users_export.csv", "w", encoding="utf-8", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerows(csv_rows)
-
-            file = FSInputFile("users_export.csv")
-            await msg.answer_document(file, caption="📄 Foydalanuvchilar statistikasi (CSV)")
-
-            os.remove("users_export.csv")
         else:
             await msg.answer("❌ Bu buyruq faqat admin uchun.")
         return
