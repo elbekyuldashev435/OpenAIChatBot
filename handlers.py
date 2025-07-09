@@ -1,14 +1,12 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
-from database import (add_user, set_language, get_language, count_last_minute_queries, save_query, get_all_users_with_queries)
+from database import (add_user, set_language, get_language, count_last_minute_queries, save_query)
 from openai_api import get_openai_response
 from utils import language_keyboard, get_text
 import os
 from dotenv import load_dotenv
 from database import get_users_with_query_stats
-from aiogram.types import FSInputFile
-import csv
 
 router = Router()
 
@@ -37,7 +35,7 @@ async def handle_question(msg: Message):
 
     if text_lower in ["/users", "/foydalanuvchilar", "/пользователи"]:
         if msg.from_user.id == ADMIN_ID:
-            users_data = await get_users_with_query_stats()
+            users_data = get_users_with_query_stats()
             text = "📋 Foydalanuvchilar ro'yxati:\n\n"
 
             for uid, username, count, last_query in users_data:
