@@ -1,12 +1,15 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
-from database import (add_user, set_language, get_language, count_last_minute_queries)
+from database import (
+    add_user, set_language, get_language,
+    count_last_minute_queries, save_query,
+    get_users_with_query_stats, get_all_users_with_queries
+)
 from openai_api import get_openai_response
 from utils import language_keyboard, get_text
 import os
 from dotenv import load_dotenv
-from database import get_users_with_query_stats, save_query, get_all_users_with_queries
 from datetime import datetime
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -69,7 +72,6 @@ Type your question and wait for the answer ⌛
     }
 }
 
-
 def get_welcome_text(key: str, lang: str = "uz") -> str:
     return TEXTS.get(key, {}).get(lang, "❌ Matn topilmadi.")
 
@@ -103,68 +105,31 @@ async def start_cmd(msg: Message):
     await msg.answer("Iltimos, tilni tanlang:", reply_markup=language_keyboard())
 
 
-@router.message()
-async def handle_question(msg: Message):
-    lang = await get_language(msg.from_user.id)
-    text_lower = msg.text.lower()
-
-    if text_lower in ["/users", "/foydalanuvchilar", "/пользователи"]:
-        if msg.from_user.id == ADMIN_ID:
-            users_data = get_users_with_query_stats()
-            text = "📋 Foydalanuvchilar ro'yxati:\n\n"
-
-            for uid, username, count, last_query in users_data:
-                display_name = username or str(uid)
-                if last_query:
-                    try:
-                        dt = datetime.fromisoformat(last_query)
-                        formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
-                    except:
-                        formatted_time = last_query
-                else:
-                    formatted_time = "Yo‘q"
-
-                text += f"👤 {display_name}:\n"
-                text += f"  — So‘rovlar soni: {count}\n"
-                text += f"  — Oxirgi so‘rov: {formatted_time}\n\n"
-
-            await msg.answer(text[:4096])
-        else:
-            await msg.answer("❌ Bu buyruq faqat admin uchun.")
+@router.message(F.text.lower() == "/users")
+async def list_users(msg: Message):
+    if msg.from_user.id != ADMIN_ID:
+        await msg.answer("❌ Bu buyruq faqat admin uchun.")
         return
 
-    if msg.from_user.id != ADMIN_ID:
-        recent_count = await count_last_minute_queries(msg.from_user.id)
-        if recent_count >= 3:
-            await msg.answer(get_text("limit_exceeded", lang))
-            return
+    users_data = await get_users_with_query_stats()
+    text = "📋 Foydalanuvchilar ro'yxati:\n\n"
 
-    await msg.answer("⌛ Yuborilmoqda...")
+    for uid, username, count, last_query in users_data:
+        display_name = username or str(uid)
+        if last_query:
+            try:
+                dt = datetime.fromisoformat(last_query)
+                formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                formatted_time = last_query
+        else:
+            formatted_time = "Yo‘q"
 
-    reply_parts = await get_openai_response(msg.text)
+        text += f"👤 {display_name}:\n"
+        text += f"  — So‘rovlar soni: {count}\n"
+        text += f"  — Oxirgi so‘rov: {formatted_time}\n\n"
 
-    for part in reply_parts:
-        await msg.answer(part)
-
-
-@router.message()
-async def handle_question(msg: Message):
-    user_id = msg.from_user.id
-    lang = await get_language(user_id)
-
-    if user_id != ADMIN_ID:
-        query_count = await count_last_minute_queries(user_id)
-        if query_count >= 3:
-            await msg.answer(get_text("limit_exceeded", lang))
-            return
-
-    await msg.answer("⌛ Yuborilmoqda...")
-    reply_parts = await get_openai_response(msg.text)
-
-    for part in reply_parts:
-        await msg.answer(part)
-
-    await save_query(user_id, msg.text, reply_parts)
+    await msg.answer(text[:4096])
 
 
 @router.message(F.text.lower() == "/history")
@@ -188,7 +153,7 @@ async def top_users(msg: Message):
         await msg.answer("❌ Bu buyruq faqat admin uchun.")
         return
 
-    stats = get_users_with_query_stats()
+    stats = await get_users_with_query_stats()
     sorted_stats = sorted(stats, key=lambda x: x[2], reverse=True)[:5]
 
     text = "🏆 Eng faol foydalanuvchilar:\n\n"
@@ -197,3 +162,23 @@ async def top_users(msg: Message):
         text += f"{i}. {display} — {count} so‘rov\n"
 
     await msg.answer(text)
+
+
+@router.message()
+async def handle_question(msg: Message):
+    user_id = msg.from_user.id
+    lang = await get_language(user_id)
+
+    if user_id != ADMIN_ID:
+        query_count = await count_last_minute_queries(user_id)
+        if query_count >= 3:
+            await msg.answer(get_text("limit_exceeded", lang))
+            return
+
+    await msg.answer("⌛ Yuborilmoqda...")
+    reply_parts = await get_openai_response(msg.text)
+
+    for part in reply_parts:
+        await msg.answer(part)
+
+    await save_query(user_id, msg.text, reply_parts)

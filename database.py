@@ -103,20 +103,16 @@ async def count_last_minute_queries(user_id):
             return row[0]
 
 
-def get_users_with_query_stats():
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT u.user_id, u.username, COUNT(q.id), MAX(q.asked_at)
-        FROM users u
-        LEFT JOIN queries q ON u.user_id = q.user_id
-        GROUP BY u.user_id
-        ORDER BY MAX(q.asked_at) DESC
-    """)
-
-    rows = cursor.fetchall()
-    conn.close()
+async def get_users_with_query_stats():
+    async with aiosqlite.connect(DB_NAME) as db:
+        async with db.execute("""
+            SELECT u.user_id, u.username, COUNT(q.id), MAX(q.asked_at)
+            FROM users u
+            LEFT JOIN queries q ON u.user_id = q.user_id
+            GROUP BY u.user_id
+            ORDER BY MAX(q.asked_at) DESC
+        """) as cursor:
+            rows = await cursor.fetchall()
 
     results = []
     for user_id, username, count, last_time in rows:
@@ -127,7 +123,6 @@ def get_users_with_query_stats():
                 formatted_time = last_time
         else:
             formatted_time = "So‘rov yo‘q"
-
         results.append((user_id, username, count, formatted_time))
 
     return results
