@@ -17,7 +17,7 @@ router = Router()
 
 load_dotenv('.env.txt')
 
-ADMIN_IDS = int(os.getenv("ADMIN_IDS"))
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 TEXTS = {
     "welcome": {
@@ -134,7 +134,7 @@ async def list_users(msg: Message):
 
 @router.message(F.text.lower() == "/history")
 async def show_history(msg: Message):
-    if msg.from_user.id not in ADMIN_IDS:
+    if msg.from_user.id != ADMIN_ID:
         await msg.answer("❌ Bu buyruq faqat admin uchun.")
         return
 
@@ -149,7 +149,7 @@ async def show_history(msg: Message):
 
 @router.message(F.text.lower() == "/top")
 async def top_users(msg: Message):
-    if msg.from_user.id not in ADMIN_IDS:
+    if msg.from_user.id != ADMIN_ID:
         await msg.answer("❌ Bu buyruq faqat admin uchun.")
         return
 
