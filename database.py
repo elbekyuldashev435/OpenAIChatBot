@@ -31,7 +31,7 @@ async def init_db():
 async def add_user(user_id, username):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute(
-            "INSERT OR IGNORE INTO users (user_id, username, joined_at) VALUES (?, ?, ?)",
+            "INSERT OR REPLACE INTO users (user_id, username, joined_at) VALUES (?, ?, ?)",
             (user_id, username, datetime.now().isoformat())
         )
         await db.commit()
