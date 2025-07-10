@@ -142,7 +142,7 @@ async def show_history(msg: Message):
     for user_id, username, prompts in users_queries:
         name = username or str(user_id)
         text = f"🧾 {name} so'rovlari ({len(prompts)} ta):\n"
-        for i, p in enumerate(prompts[-5:], start=1):
+        for i, p in enumerate(prompts, start=1):
             text += f"{i}. {p[:50]}...\n"
         await msg.answer(text[:4096])
 
