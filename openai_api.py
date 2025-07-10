@@ -49,7 +49,7 @@ async def get_openai_response(prompt: str) -> list[str]:
                 {"role": "system", "content": system_content},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1500,
+            max_tokens=1400,
             temperature=0.7
         ))
 
