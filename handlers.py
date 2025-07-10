@@ -15,11 +15,32 @@ load_dotenv('.env.txt')
 
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
+TEXTS = """
+👋 Assalomu alaykum!
+
+Men OpenAI asosidagi sun'iy intellekt chatbotman 🤖.
+Quyidagicha savollarga javob bera olaman:
+
+🕌 Diniy savollar (Islom, Qur'on, ibodatlar)
+💻 Dasturlash va texnika (Python, Django, botlar)
+🎓 Fan va ta'lim (matematika, fizika, biologiya)
+🌐 Til o‘rganish va tarjima (uz/ru/en)
+🔍 Oddiy hayotiy savollar
+
+❗ Har daqiqada 3 ta so‘rov yuborish mumkin.
+
+Savolingizni yozing va javobni kuting ⌛
+"""
+
+
+def get_welcome_text(key: str, lang: str = "uz") -> str:
+    return TEXTS.get(key, {}).get(lang, "❌ Matn topilmadi.")
+
 
 @router.message(CommandStart())
 async def start_cmd(msg: Message):
     await add_user(msg.from_user.id, msg.from_user.username)
-    await msg.answer(get_text("welcome", "uz"), reply_markup=language_keyboard())
+    await msg.answer(get_welcome_text("welcome", "uz"), reply_markup=language_keyboard())
 
 
 @router.callback_query(F.data.startswith("lang_"))
