@@ -66,6 +66,12 @@ async def handle_question(msg: Message):
             return
 
     await msg.answer("⌛ Yuborilmoqda...")
-    reply = await get_openai_response(msg.text)
-    await save_query(msg.from_user.id, msg.text, reply)
-    await msg.answer(reply)
+
+    # 🔧 Javobni olish
+    reply_parts = await get_openai_response(msg.text)
+
+    # 🔧 Har bir bo‘lakni alohida yubor
+    for part in reply_parts:
+        await msg.answer(part)
+
+    # 🔧 Saqlash uchun string shaklga aylantirib yoz
