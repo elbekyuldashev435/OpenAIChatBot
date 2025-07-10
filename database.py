@@ -108,12 +108,9 @@ def get_users_with_query_stats():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT u.user_id, u.username, COUNT(q.id), MAX(q.asked_at), q2.prompt
+        SELECT u.user_id, u.username, COUNT(q.id), MAX(q.asked_at)
         FROM users u
         LEFT JOIN queries q ON u.user_id = q.user_id
-        LEFT JOIN queries q2 ON q2.user_id = u.user_id AND q2.asked_at = (
-            SELECT MAX(asked_at) FROM queries WHERE user_id = u.user_id
-        )
         GROUP BY u.user_id
         ORDER BY MAX(q.asked_at) DESC
     """)
@@ -122,7 +119,7 @@ def get_users_with_query_stats():
     conn.close()
 
     results = []
-    for user_id, username, count, last_time, last_prompt in rows:
+    for user_id, username, count, last_time in rows:
         if last_time:
             try:
                 formatted_time = datetime.fromisoformat(last_time).strftime("%Y-%m-%d %H:%M:%S")
@@ -131,6 +128,6 @@ def get_users_with_query_stats():
         else:
             formatted_time = "So‘rov yo‘q"
 
-        results.append((user_id, username, count, formatted_time, last_prompt))
+        results.append((user_id, username, count, formatted_time))
 
     return results
