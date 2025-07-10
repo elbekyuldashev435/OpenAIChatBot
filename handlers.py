@@ -6,7 +6,7 @@ from openai_api import get_openai_response
 from utils import language_keyboard, get_text
 import os
 from dotenv import load_dotenv
-from database import get_users_with_query_stats
+from database import get_users_with_query_stats, save_query, get_all_users_with_queries
 from datetime import datetime
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -145,3 +145,55 @@ async def handle_question(msg: Message):
 
     for part in reply_parts:
         await msg.answer(part)
+
+
+@router.message()
+async def handle_question(msg: Message):
+    user_id = msg.from_user.id
+    lang = await get_language(user_id)
+
+    if user_id != ADMIN_ID:
+        query_count = await count_last_minute_queries(user_id)
+        if query_count >= 3:
+            await msg.answer(get_text("limit_exceeded", lang))
+            return
+
+    await msg.answer("⌛ Yuborilmoqda...")
+    reply_parts = await get_openai_response(msg.text)
+
+    for part in reply_parts:
+        await msg.answer(part)
+
+    await save_query(user_id, msg.text, reply_parts)
+
+
+@router.message(F.text.lower() == "/history")
+async def show_history(msg: Message):
+    if msg.from_user.id != ADMIN_ID:
+        await msg.answer("❌ Bu buyruq faqat admin uchun.")
+        return
+
+    users_queries = await get_all_users_with_queries()
+    for user_id, username, prompts in users_queries:
+        name = username or str(user_id)
+        text = f"🧾 {name} so'rovlari ({len(prompts)} ta):\n"
+        for i, p in enumerate(prompts[-5:], start=1):
+            text += f"{i}. {p[:50]}...\n"
+        await msg.answer(text[:4096])
+
+
+@router.message(F.text.lower() == "/top")
+async def top_users(msg: Message):
+    if msg.from_user.id != ADMIN_ID:
+        await msg.answer("❌ Bu buyruq faqat admin uchun.")
+        return
+
+    stats = get_users_with_query_stats()
+    sorted_stats = sorted(stats, key=lambda x: x[2], reverse=True)[:5]
+
+    text = "🏆 Eng faol foydalanuvchilar:\n\n"
+    for i, (user_id, username, count, last_time) in enumerate(sorted_stats, start=1):
+        display = username or str(user_id)
+        text += f"{i}. {display} — {count} so‘rov\n"
+
+    await msg.answer(text)
