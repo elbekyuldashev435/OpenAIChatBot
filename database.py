@@ -66,6 +66,9 @@ async def count_queries(user_id):
 
 
 async def save_query(user_id, prompt, response):
+    if isinstance(response, list):
+        response = "\n\n".join(response)
+
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("""
             INSERT INTO queries (user_id, prompt, response, asked_at)
@@ -105,12 +108,29 @@ def get_users_with_query_stats():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT u.user_id, u.username, COUNT(q.id), MAX(q.asked_at)
+        SELECT u.user_id, u.username, COUNT(q.id), MAX(q.asked_at), q2.prompt
         FROM users u
         LEFT JOIN queries q ON u.user_id = q.user_id
+        LEFT JOIN queries q2 ON q2.user_id = u.user_id AND q2.asked_at = (
+            SELECT MAX(asked_at) FROM queries WHERE user_id = u.user_id
+        )
         GROUP BY u.user_id
         ORDER BY MAX(q.asked_at) DESC
     """)
+
     rows = cursor.fetchall()
     conn.close()
-    return rows
+
+    results = []
+    for user_id, username, count, last_time, last_prompt in rows:
+        if last_time:
+            try:
+                formatted_time = datetime.fromisoformat(last_time).strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                formatted_time = last_time
+        else:
+            formatted_time = "So‘rov yo‘q"
+
+        results.append((user_id, username, count, formatted_time, last_prompt))
+
+    return results
